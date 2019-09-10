@@ -3,6 +3,7 @@ services:
     jenkins:
         volumes:
           - "./data:/data"
+          - "./jenkins_home:/var/jenkins_home"
         build:
           context: ./
           dockerfile: Dockerfile-jenkins
