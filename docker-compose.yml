@@ -1,6 +1,8 @@
 version: '2'
 services:
     jenkins:
+        environment:
+          MYSQL_ROOT_PASSWORD: 'mHsJ33lF+1FZ'
         volumes:
           - "./data:/data"
           - "./jenkins_home:/var/jenkins_home"
