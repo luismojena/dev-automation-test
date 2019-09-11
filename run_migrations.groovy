@@ -7,7 +7,7 @@ pipeline {
                     def tenants = params.TENANT_NAMES.split(",")
                     echo "Tenant list: ${tenants}"
                     def migration_name = params.MIGRATION_NAME.trim()
-                    echo "Migraiton name: ${migration_name}"
+                    echo "Migration name: ${migration_name}"
                     tenants.each { tenant ->
                         def tenant_name = tenant.trim()
                         echo "Processing tenant: ${tenant_name}"
