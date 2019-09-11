@@ -1,9 +1,14 @@
+import java.util.concurrent.LinkedBlockingQueue
+
 pipeline {
     agent any
     stages {
         stage('Run migrations') {
             steps {
                 script{
+
+                    def NUMBER_OF_WORKERS = 5; // make this a parameter
+
                     def tenants = params.TENANT_NAMES.split(",")
                     echo "Tenant list: ${tenants}"
                     def migration_name = params.MIGRATION_NAME.trim()
@@ -12,21 +17,45 @@ pipeline {
                     if (tenants[0] == "ALL") {
                         tenants = get_all_tenants_names()
                     }
-                    process_selected_tenants(tenants)
+
+                    // build 5 workers that pop tenants from a queue
+                    LinkedBlockingQueue queue = new LinkedBlockingQueue()
+                    def workers = [:]
+
+                    for (int i = 1; i <= NUMBER_OF_WORKERS; i++) {
+                        def index = i
+                        def stepName = "Worker ${index}"
+                        def currentQueue = queue
+
+                        workers[stepName] = {
+                            tenant = currentQueue.poll()
+                            while(tenant!=null){
+                                process_selected_tenant(tenant)
+                                tenant = currentQueue.poll()
+                            }
+                        }
+                    }
+
+                    for (t in tenants){
+                        queue.put(t)
+                    }
+                    echo "${queue}"
+                    parallel(workers)
+                    echo "${queue}"
                 }
             }
         }
     }
 }
 
-def process_selected_tenants(tenants){
-    tenants.each { tenant ->
+
+//def process_selected_tenants(tenants){
+def process_selected_tenant(tenant){
         def tenant_name = tenant.trim()
         echo "Processing tenant: ${tenant_name}"
         def tenant_id = get_tenant_id(tenant_name)
         echo "TENANT ID: ${tenant_id}"
         run_migration_for_tenant(tenant_id, migration_name)
-    }
 }
 
 def get_tenant_id(tenant_name){
