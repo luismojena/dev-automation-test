@@ -31,26 +31,28 @@ def process_selected_tenants(tenants){
 
 def get_tenant_id(tenant_name){
     def query = "use rmtest; select id from tenants where name=\"${tenant_name}\";"
-    def var = sh(
-        returnStdout: true,
-        script: "mysql -h db -u root -p$MYSQL_ROOT_PASSWORD -s -N -e \'${query}\' "
-    ).trim()
-    return var.toInteger()
+    tenant_id = run_mysql_query(query)
+    return tenant_id.toInteger()
 }
 
 def run_migration_for_tenant(tenant_id, migration_name){
     def query = "use rmtest; INSERT INTO migrations(tenant_id, name) VALUES (${tenant_id}, \"${migration_name}\")"
-    sh(
-        script: "mysql -h db -u root -p$MYSQL_ROOT_PASSWORD -s -N -e \'${query}\' "
-    )
+    run_mysql_query(query, false)
 }
 
 def get_all_tenants_names(){
     def query = "use rmtest; SELECT name from tenants;"
-    def tenants = sh(
-        returnStdout: true,
+    tenant_names = run_mysql_query(query).split("\n")
+    return tenant_names
+}
+
+def run_mysql_query(query, showOutput=true){
+    def result = sh(
+        returnStdout: showOutput,
         script: "mysql -h db -u root -p$MYSQL_ROOT_PASSWORD -s -N -e \'${query}\' "
-    ).split("\n")
-    echo "${tenants}"
-    return tenants
+    )
+    if (showOutput){
+        return result.trim()
+    }
+    return result
 }
