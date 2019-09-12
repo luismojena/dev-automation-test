@@ -1,14 +1,9 @@
-import java.util.concurrent.LinkedBlockingQueue
-
 pipeline {
     agent any
     stages {
-        stage('Run migrations') {
+        stage('Setup migrations') {
             steps {
                 script{
-
-                    def NUMBER_OF_WORKERS = 5; // make this a parameter
-
                     def tenants = params.TENANT_NAMES.split(",")
                     echo "Tenant list: ${tenants}"
                     def migration_name = params.MIGRATION_NAME.trim()
@@ -40,17 +35,19 @@ pipeline {
                         queue.put(t)
                     }
                     echo "${queue}"
-                    parallel(workers)
-                    echo "${queue}"
+
+                    stage('Running migrations'){
+                       parallel(workers)
+                        echo "${queue}"
+                    }
                 }
             }
         }
     }
 }
 
-
-//def process_selected_tenants(tenants){
-def process_selected_tenant(tenant){
+def process_selected_tenants(tenants){
+    tenants.each { tenant ->
         def tenant_name = tenant.trim()
         echo "Processing tenant: ${tenant_name}"
         def tenant_id = get_tenant_id(tenant_name)
